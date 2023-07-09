@@ -16,7 +16,6 @@ export const isLoggedIn = async(req,res,next)=>{
                     msg: err.message
                 })
             } else {
-                console.log(decodedToken)
                 const user = await User.findById(decodedToken.id)
                 if(!user) res.status(401).json({status : false, message : "Please Logged In First."})
                 req.decodedToken = decodedToken
@@ -37,6 +36,7 @@ export const auth = async(req,res,next)=>{
         if(!token) return res.status(404).json({status : false, messsage : "No Token Found"})
 
         const decodedToken = jwt.verify(token, process.env.JWT_SECRET)
+        
 
         if(decodedToken.id === req.params.userId){
             next()
