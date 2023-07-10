@@ -68,11 +68,8 @@ export const postCart = async (req, res) => {
             });
         }
 
-
         const {
             items,
-            totalPrice,
-            totalItems
         } = req.body
 
         const {
@@ -90,7 +87,10 @@ export const postCart = async (req, res) => {
         const isCart = await Cart.findOne({
             userId: userId
         })
+
         const isProduct = await Product.findById(productId)
+
+
         const isUser = await User.findById(userId)
 
         if (!isUser) return res.status(404).json({
@@ -98,17 +98,18 @@ export const postCart = async (req, res) => {
             message: "User Not Found!!!"
         })
 
-        if (!isProduct) return res.status(404).json({
+        if (!isProduct || isProduct.isDeleted) return res.status(404).json({
             status: false,
-            message: "Product Not FOund !!!"
+            message: "Product Not Found or deleted !!!"
         })
+
 
         if (!isCart) {
             const cart = new Cart({
                 userId,
-                items,
-                totalPrice,
-                totalItems
+                items: [{ productId, quantity }],
+                totalPrice : isProduct.price * quantity,
+                totalItems : quantity
             })
             await cart.save()
 
@@ -122,7 +123,7 @@ export const postCart = async (req, res) => {
             const existingItem = isCart.items.find((item) => item.productId.toString() === productId)
 
             if (existingItem) {
-                existingItem.quantity += 1
+                existingItem.quantity += Number(quantity)
             } else {
                 isCart.items.push({
                     productId,
@@ -130,7 +131,7 @@ export const postCart = async (req, res) => {
                 })
             }
 
-            isCart.totalPrice += Number(totalPrice) * quantity
+            isCart.totalPrice += Number(isProduct.price) * quantity
             isCart.totalItems += Number(quantity)
 
             await isCart.save()
@@ -149,10 +150,6 @@ export const postCart = async (req, res) => {
         })
     }
 }
-
-
-
-
 
 
 
@@ -215,6 +212,8 @@ export const updateCart = async (req, res) => {
             });
         }
 
+        const productToReduce = await Product.findById(existingItem.productId.toString())
+
         if (removeProduct) {
             isCart.items = isCart.items.filter((item) => item.productId.toString() !== productId);
 
@@ -223,13 +222,14 @@ export const updateCart = async (req, res) => {
             if(existingItem.quantity <= 1){
                 isCart.items = isCart.items.filter((item) => item.productId.toString() !== productId)
             }else{
+                console.log(productToReduce)
                 if (existingItem.quantity > 0) {
                     existingItem.quantity -= 1
                     if(isCart.totalPrice > 0){
-                        isCart.totalPrice -= (isCart.totalPrice) / (existingItem.quantity)
+                        isCart.totalPrice -= Number(productToReduce.price)
                     }
                     if(isCart.totalItems  > 0){
-                        isCart.totalItems -= (existingItem.quantity)
+                        isCart.totalItems -= 1
                     }
                 }
             }
