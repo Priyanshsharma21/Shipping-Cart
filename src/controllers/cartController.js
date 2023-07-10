@@ -222,7 +222,6 @@ export const updateCart = async (req, res) => {
             if(existingItem.quantity <= 1){
                 isCart.items = isCart.items.filter((item) => item.productId.toString() !== productId)
             }else{
-                console.log(productToReduce)
                 if (existingItem.quantity > 0) {
                     existingItem.quantity -= 1
                     if(isCart.totalPrice > 0){
